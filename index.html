@@ -88,7 +88,18 @@
 </div>
 <script src="soal.js"></script>
 <script>
+// =========================================================================
+// 🛠️ PENGATURAN UTAMA (ANDA BISA UBAH ANGKA-ANGKA DI SINI)
+// =========================================================================
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqr-z022Zu2JDZo32EXw1BtkNG81O6U-T-7NXs-3Ft9KRzY61sYt4EOke7kGJ_G2CCQ/exec";
+
+// Batasan waktu dalam satuan DETIK (1 menit = 60 detik)
+const WAKTU_TERLALU_CEPAT = 120; // Di bawah 2 menit dianggap PASTI NYONTEK/TEMBAK JAWABAN (Potong poin)
+const WAKTU_MAKS_BONUS    = 240; // Di bawah 4 menit (dan di atas 2 menit) dianggap PINTAR & JUJUR (Dapat bonus)
+
+// =========================================================================
+// SISTEM OPERASI APLIKASI
+// =========================================================================
 let siswaData = { nama: "", absen: "", kelas: "" };
 let currentQuestionIndex = 0; let skorBenar = 0; let jumlahCurang = 0; let jumlahTerlaluCepat = 0;
 let totalWaktuUjian = 0; let waktuSoalIni = 0; let timerInterval; let totalBenarMurni = 0;
@@ -153,16 +164,17 @@ function checkAnswer(selectedOption) {
     if (selectedOption === q.answer) {
         totalBenarMurni++;
         
-        if (waktuSoalIni < 7) {
-            // HUKUMAN: Jika benar tapi pengerjaan di bawah 7 detik (mencurigakan/joki)
+        if (waktuSoalIni < WAKTU_TERLALU_CEPAT) {
+            // HUKUMAN: Menjawab di bawah waktu minimal (Indikasi joki kilat / salin jawaban teman)
             jumlahTerlaluCepat++;
-            skorBenar += 10; // Dapat poin dasar dulu, nanti dipotong besar di nilai akhir
-        } else if (waktuSoalIni >= 7 && waktuSoalIni <= 25) {
-            // BONUS: Anak pintar pengerjaan cepat yang wajar
-            let bonusWaktu = (25 - waktuSoalIni) * 0.25; 
+            skorBenar += 10; // Poin dasar masuk, tapi nanti dipotong besar oleh pengali totalPotongan
+        } else if (waktuSoalIni >= WAKTU_TERLALU_CEPAT && waktuSoalIni <= WAKTU_MAKS_BONUS) {
+            // BONUS: Anak pintar pengerjaan cepat yang logis (2-4 menit)
+            // Makin cepat mendekati batas minimal, bonus makin maksimal
+            let bonusWaktu = (WAKTU_MAKS_BONUS - waktuSoalIni) * 0.03; 
             skorBenar += (10 + bonusWaktu);
         } else {
-            // NORMAL: Pengerjaan waktu santai/lama
+            // NORMAL: Pengerjaan teliti/hati-hati di atas 4 menit
             skorBenar += 10;
         }
     }
@@ -175,10 +187,10 @@ function processAndSendData() {
     document.getElementById("loading-page").classList.remove("hidden");
     
     let rataWaktu = (totalWaktuUjian / daftarSoal.length).toFixed(1);
-    let maxSkorMungkin = daftarSoal.length * 14.5; 
+    let maxSkorMungkin = daftarSoal.length * 13.6; 
     let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
 
-    // MATRIKS HUKUMAN: Potong 15 poin per pindah layar ATAU per soal yang ditembak terlalu cepat
+    // MATRIKS PENALTI: Setiap pindah layar ATAU menjawab kurang dari 2 menit memotong nilai akhir sebesar 15 poin
     let totalPotongan = (jumlahCurang * 15) + (jumlahTerlaluCepat * 15);
     let nilaiAkhir = Math.round(nilaiDasar - totalPotongan);
     
@@ -193,7 +205,7 @@ function processAndSendData() {
         absen: siswaData.absen,
         kelas: siswaData.kelas,
         benar: totalBenarMurni,
-        curang: totalSemuaPelanggaran, // Mengirimkan total gabungan kecurangan ke Excel Anda
+        curang: totalSemuaPelanggaran,
         waktu: rataWaktu,
         nilai: nilaiAkhir
     };
@@ -220,4 +232,5 @@ function showResultPage(data) {
 </script>
 </body>
 </html>
+
 
