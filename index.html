@@ -89,13 +89,18 @@
 <script src="soal.js"></script>
 <script>
 // =========================================================================
-// 🛠️ PENGATURAN UTAMA (ANDA BISA UBAH ANGKA-ANGKA DI SINI)
+// ⏳ PENGATURAN JADWAL UJIAN (SILAKAN DIUBAH SESUAI HARI & JAM UJIAN)
+// =========================================================================
+// Format: TAHUN-BULAN-HARI T JAM:MENIT:DETIK +07:00 (KODE WAKTU WIB)
+const WAKTU_MULAI   = "2026-10-29T19:30:00+07:00"; // Contoh: Kamis, 29 Okt 2026 jam 07:30 Malam WIB
+const WAKTU_SELESAI = "2026-10-29T21:00:00+07:00"; // Contoh: Ujian ditutup jam 09:00 Malam WIB
+
+// =========================================================================
+// 🛠️ PENGATURAN AMBANG BATAS CHEATING
 // =========================================================================
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqr-z022Zu2JDZo32EXw1BtkNG81O6U-T-7NXs-3Ft9KRzY61sYt4EOke7kGJ_G2CCQ/exec";
-
-// Batasan waktu dalam satuan DETIK (1 menit = 60 detik)
-const WAKTU_TERLALU_CEPAT = 120; // Di bawah 2 menit dianggap PASTI NYONTEK/TEMBAK JAWABAN (Potong poin)
-const WAKTU_MAKS_BONUS    = 240; // Di bawah 4 menit (dan di atas 2 menit) dianggap PINTAR & JUJUR (Dapat bonus)
+const WAKTU_TERLALU_CEPAT = 20; // Di bawah 20 detik = Potong poin (Indikasi joki/contek)
+const WAKTU_MAKS_BONUS    = 120; // Di bawah 2 menit = Bonus kecepatan wajar
 
 // =========================================================================
 // SISTEM OPERASI APLIKASI
@@ -103,6 +108,48 @@ const WAKTU_MAKS_BONUS    = 240; // Di bawah 4 menit (dan di atas 2 menit) diang
 let siswaData = { nama: "", absen: "", kelas: "" };
 let currentQuestionIndex = 0; let skorBenar = 0; let jumlahCurang = 0; let jumlahTerlaluCepat = 0;
 let totalWaktuUjian = 0; let waktuSoalIni = 0; let timerInterval; let totalBenarMurni = 0;
+
+// Fungsi Cek Waktu Otomatis Saat Link Dibuka
+window.addEventListener("DOMContentLoaded", () => {
+    // Sembunyikan form sementara saat memeriksa jam server
+    document.getElementById("auth-page").style.display = "none";
+    
+    let loadingDiv = document.createElement("div");
+    loadingDiv.id = "check-time-loading";
+    loadingDiv.innerHTML = "<div style='text-align:center;font-weight:600;padding:20px;'><p>Memverifikasi Jadwal Ujian via Server WIB...</p></div>";
+    document.querySelector(".card").appendChild(loadingDiv);
+
+    // Ambil waktu asli internet (Bukan jam HP) untuk mencegah kecurangan manipulasi tanggal HP
+    fetch("https://worldtimeapi.org")
+    .then(res => res.json())
+    .then(data => {
+        loadingDiv.remove();
+        let serverTime = new Date(data.datetime).getTime();
+        let openTime = new Date(WAKTU_MULAI).getTime();
+        let closeTime = new Date(WAKTU_SELESAI).getTime();
+
+        if (serverTime < openTime) {
+            // Kasus 1: Belum waktunya ujian
+            kunciAplikasi(`<h3>UJIAN BELUM DIMULAI 🔒</h3><br><p>Sesuai jadwal, soal baru akan muncul pada:<br><strong>${new Date(WAKTU_MULAI).toLocaleString('id-ID')} WIB</strong></p>`);
+        } else if (serverTime > closeTime) {
+            // Kasus 2: Ujian sudah lewat/berakhir
+            kunciAplikasi(`<h3>UJIAN SUDAH BERAKHIR 🚫</h3><br><p>Maaf, batas waktu pengerjaan telah habis pada:<br><strong>${new Date(WAKTU_SELESAI).toLocaleString('id-ID')} WIB</strong></p>`);
+        } else {
+            // Kasus 3: Waktu cocok, ujian dibuka
+            document.getElementById("auth-page").style.display = "block";
+        }
+    })
+    .catch(err => {
+        loadingDiv.remove();
+        alert("Gagal terhubung ke Server Waktu Internet. Pastikan koneksi internet stabil lalu muat ulang (refresh) halaman!");
+        kunciAplikasi("<h3>KONEKSI TERPUTUS</h3><br><p>Gagal memverifikasi jam ujian. Silakan klik refresh/muat ulang halaman ini.</p>");
+    });
+});
+
+function kunciAplikasi(pesan) {
+    // Menghapus total isi form agar soal tidak bisa di-inspect/dibobol siswa lewat kode CSS
+    document.querySelector(".card").innerHTML = `<div style='text-align:center; padding:30px; line-height:1.6;'>${pesan}</div>`;
+}
 
 function validateAndStart() {
     let nama = document.getElementById("input-nama").value.trim();
@@ -163,18 +210,11 @@ function checkAnswer(selectedOption) {
     let q = daftarSoal[currentQuestionIndex];
     if (selectedOption === q.answer) {
         totalBenarMurni++;
-        
         if (waktuSoalIni < WAKTU_TERLALU_CEPAT) {
-            // HUKUMAN: Menjawab di bawah waktu minimal (Indikasi joki kilat / salin jawaban teman)
-            jumlahTerlaluCepat++;
-            skorBenar += 10; // Poin dasar masuk, tapi nanti dipotong besar oleh pengali totalPotongan
+            jumlahTerlaluCepat++; skorBenar += 10;
         } else if (waktuSoalIni >= WAKTU_TERLALU_CEPAT && waktuSoalIni <= WAKTU_MAKS_BONUS) {
-            // BONUS: Anak pintar pengerjaan cepat yang logis (2-4 menit)
-            // Makin cepat mendekati batas minimal, bonus makin maksimal
-            let bonusWaktu = (WAKTU_MAKS_BONUS - waktuSoalIni) * 0.03; 
-            skorBenar += (10 + bonusWaktu);
+            let bonusWaktu = (WAKTU_MAKS_BONUS - waktuSoalIni) * 0.03; skorBenar += (10 + bonusWaktu);
         } else {
-            // NORMAL: Pengerjaan teliti/hati-hati di atas 4 menit
             skorBenar += 10;
         }
     }
@@ -187,36 +227,16 @@ function processAndSendData() {
     document.getElementById("loading-page").classList.remove("hidden");
     
     let rataWaktu = (totalWaktuUjian / daftarSoal.length).toFixed(1);
-    let maxSkorMungkin = daftarSoal.length * 13.6; 
-    let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
-
-    // MATRIKS PENALTI: Setiap pindah layar ATAU menjawab kurang dari 2 menit memotong nilai akhir sebesar 15 poin
+    let maxSkorMungkin = daftarSoal.length * 13.6; let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
     let totalPotongan = (jumlahCurang * 15) + (jumlahTerlaluCepat * 15);
     let nilaiAkhir = Math.round(nilaiDasar - totalPotongan);
     
-    if (nilaiAkhir > 100) nilaiAkhir = 100;
-    if (nilaiAkhir < 0) nilaiAkhir = 0;
-    if (totalBenarMurni === 0) nilaiAkhir = 0;
-
+    if (nilaiAkhir > 100) nilaiAkhir = 100; if (nilaiAkhir < 0) nilaiAkhir = 0; if (totalBenarMurni === 0) nilaiAkhir = 0;
     let totalSemuaPelanggaran = jumlahCurang + jumlahTerlaluCepat;
-
-    let payload = {
-        nama: siswaData.nama,
-        absen: siswaData.absen,
-        kelas: siswaData.kelas,
-        benar: totalBenarMurni,
-        curang: totalSemuaPelanggaran,
-        waktu: rataWaktu,
-        nilai: nilaiAkhir
-    };
-
+    
+    let payload = { nama: siswaData.nama, absen: siswaData.absen, kelas: siswaData.kelas, benar: totalBenarMurni, curang: totalSemuaPelanggaran, waktu: rataWaktu, nilai: nilaiAkhir };
     let formBody = new URLSearchParams(payload).toString();
-    fetch(GOOGLE_SCRIPT_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formBody
-    })
+    fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formBody })
     .then(() => { showResultPage(payload); })
     .catch((err) => { console.error("Gagal kirim:", err); showResultPage(payload); });
 }
@@ -232,5 +252,6 @@ function showResultPage(data) {
 </script>
 </body>
 </html>
+
 
 
