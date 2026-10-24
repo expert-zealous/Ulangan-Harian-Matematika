@@ -162,15 +162,47 @@ function processAndSendData() {
     clearInterval(timerInterval);
     document.getElementById("exam-page").classList.add("hidden");
     document.getElementById("loading-page").classList.remove("hidden");
+
     let rataWaktu = (totalWaktuUjian / daftarSoal.length).toFixed(1);
-    let maxSkorMungkin = daftarSoal.length * 15; let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
-    let totalPotongan = jumlahCurang * 15; let nilaiAkhir = Math.round(nilaiDasar - totalPotongan);
-    if (nilaiAkhir > 100) nilaiAkhir = 100; if (nilaiAkhir < 0) nilaiAkhir = 0; if (totalBenarMurni === 0) nilaiAkhir = 0;
-    let payload = { nama: siswaData.nama, absen: siswaData.absen, kelas: siswaData.kelas, benar: totalBenarMurni, curang: jumlahCurang, waktu: rataWaktu, nilai: nilaiAkhir };
-    fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", cache: "no-cache", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-    .then(() => { showResultPage(payload); })
-    .catch((err) => { console.error("Gagal kirim:", err); alert("Koneksi internet bermasalah, nilai dicoba kirim ulang."); showResultPage(payload); });
+    let maxSkorMungkin = daftarSoal.length * 15; 
+    let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
+
+    let totalPotongan = jumlahCurang * 15;
+    let nilaiAkhir = Math.round(nilaiDasar - totalPotongan);
+
+    if (nilaiAkhir > 100) nilaiAkhir = 100;
+    if (nilaiAkhir < 0) nilaiAkhir = 0;
+    if (totalBenarMurni === 0) nilaiAkhir = 0;
+
+    let payload = {
+        nama: siswaData.nama,
+        absen: siswaData.absen,
+        kelas: siswaData.kelas,
+        benar: totalBenarMurni,
+        curang: jumlahCurang,
+        waktu: rataWaktu,
+        nilai: nilaiAkhir
+    };
+
+    // Mengubah data menjadi bentuk parameter formulir biasa agar Google Apps Script lancar menerimanya
+    let formBody = new URLSearchParams(payload).toString();
+
+    fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        mode: "no-cors", // Tetap gunakan mode ini agar aman dari pemblokiran browser
+        headers: { "Content-Type": "application/x-www-form-urlencoded" }, // Format standar kirim formulir
+        body: formBody
+    })
+    .then(() => {
+        showResultPage(payload);
+    })
+    .catch((err) => {
+        console.error("Gagal kirim otomatis:", err);
+        alert("Koneksi internet bermasalah, nilai dicoba kirim ulang.");
+        showResultPage(payload);
+    });
 }
+
 function showResultPage(data) {
     document.getElementById("loading-page").classList.add("hidden");
     document.getElementById("result-page").classList.remove("hidden");
