@@ -90,7 +90,7 @@
 <script>
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqr-z022Zu2JDZo32EXw1BtkNG81O6U-T-7NXs-3Ft9KRzY61sYt4EOke7kGJ_G2CCQ/exec";
 let siswaData = { nama: "", absen: "", kelas: "" };
-let currentQuestionIndex = 0; let skorBenar = 0; let jumlahCurang = 0;
+let currentQuestionIndex = 0; let skorBenar = 0; let jumlahCurang = 0; let jumlahTerlaluCepat = 0;
 let totalWaktuUjian = 0; let waktuSoalIni = 0; let timerInterval; let totalBenarMurni = 0;
 
 function validateAndStart() {
@@ -122,7 +122,7 @@ function startExam() {
         if (document.hidden) {
             jumlahCurang++;
             document.getElementById("warning-badge").classList.remove("hidden");
-            document.getElementById("count-curang").innerText = jumlahCurang;
+            document.getElementById("count-curang").innerText = (jumlahCurang + jumlahTerlaluCepat);
             alert("⚠️ PERINGATAN KECURANGAN: Anda terdeteksi memindahkan layar/buka aplikasi lain! Poin Anda dikurangi secara otomatis.");
         }
     });
@@ -152,8 +152,19 @@ function checkAnswer(selectedOption) {
     let q = daftarSoal[currentQuestionIndex];
     if (selectedOption === q.answer) {
         totalBenarMurni++;
-        let bonusWaktu = waktuSoalIni < 20 ? (20 - waktuSoalIni) * 0.25 : 0;
-        skorBenar += (10 + bonusWaktu);
+        
+        if (waktuSoalIni < 7) {
+            // HUKUMAN: Jika benar tapi pengerjaan di bawah 7 detik (mencurigakan/joki)
+            jumlahTerlaluCepat++;
+            skorBenar += 10; // Dapat poin dasar dulu, nanti dipotong besar di nilai akhir
+        } else if (waktuSoalIni >= 7 && waktuSoalIni <= 25) {
+            // BONUS: Anak pintar pengerjaan cepat yang wajar
+            let bonusWaktu = (25 - waktuSoalIni) * 0.25; 
+            skorBenar += (10 + bonusWaktu);
+        } else {
+            // NORMAL: Pengerjaan waktu santai/lama
+            skorBenar += 10;
+        }
     }
     currentQuestionIndex++;
     if (currentQuestionIndex < daftarSoal.length) { loadQuestion(); } else { processAndSendData(); }
@@ -162,47 +173,41 @@ function processAndSendData() {
     clearInterval(timerInterval);
     document.getElementById("exam-page").classList.add("hidden");
     document.getElementById("loading-page").classList.remove("hidden");
-
+    
     let rataWaktu = (totalWaktuUjian / daftarSoal.length).toFixed(1);
-    let maxSkorMungkin = daftarSoal.length * 15; 
+    let maxSkorMungkin = daftarSoal.length * 14.5; 
     let nilaiDasar = (skorBenar / maxSkorMungkin) * 100;
 
-    let totalPotongan = jumlahCurang * 15;
+    // MATRIKS HUKUMAN: Potong 15 poin per pindah layar ATAU per soal yang ditembak terlalu cepat
+    let totalPotongan = (jumlahCurang * 15) + (jumlahTerlaluCepat * 15);
     let nilaiAkhir = Math.round(nilaiDasar - totalPotongan);
-
+    
     if (nilaiAkhir > 100) nilaiAkhir = 100;
     if (nilaiAkhir < 0) nilaiAkhir = 0;
     if (totalBenarMurni === 0) nilaiAkhir = 0;
+
+    let totalSemuaPelanggaran = jumlahCurang + jumlahTerlaluCepat;
 
     let payload = {
         nama: siswaData.nama,
         absen: siswaData.absen,
         kelas: siswaData.kelas,
         benar: totalBenarMurni,
-        curang: jumlahCurang,
+        curang: totalSemuaPelanggaran, // Mengirimkan total gabungan kecurangan ke Excel Anda
         waktu: rataWaktu,
         nilai: nilaiAkhir
     };
 
-    // Mengubah data menjadi bentuk parameter formulir biasa agar Google Apps Script lancar menerimanya
     let formBody = new URLSearchParams(payload).toString();
-
     fetch(GOOGLE_SCRIPT_URL, {
         method: "POST",
-        mode: "no-cors", // Tetap gunakan mode ini agar aman dari pemblokiran browser
-        headers: { "Content-Type": "application/x-www-form-urlencoded" }, // Format standar kirim formulir
+        mode: "no-cors",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formBody
     })
-    .then(() => {
-        showResultPage(payload);
-    })
-    .catch((err) => {
-        console.error("Gagal kirim otomatis:", err);
-        alert("Koneksi internet bermasalah, nilai dicoba kirim ulang.");
-        showResultPage(payload);
-    });
+    .then(() => { showResultPage(payload); })
+    .catch((err) => { console.error("Gagal kirim:", err); showResultPage(payload); });
 }
-
 function showResultPage(data) {
     document.getElementById("loading-page").classList.add("hidden");
     document.getElementById("result-page").classList.remove("hidden");
@@ -215,3 +220,4 @@ function showResultPage(data) {
 </script>
 </body>
 </html>
+
