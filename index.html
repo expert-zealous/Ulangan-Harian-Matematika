@@ -107,11 +107,11 @@
         <h2>Ujian Selesai</h2><p class="subtitle">Data Anda telah berhasil direkap di sistem guru</p>
         <div class="result-score" id="res-nilai">0</div>
         <div style="margin-bottom: 20px;">
-            <div class="result-item"><span>Nama Peserta</span><strong id="res-nama">-</strong></div>
-            <div class="result-item"><span>Kelas / Absen</span><strong id="res-kelas-absen">-</strong></div>
-            <div class="result-item"><span>Jawaban Benar</span><strong id="res-benar" style="color: var(--success);">-</strong></div>
-            <div class="result-item"><span>Pelanggaran Skrin/Keluar</span><strong id="res-curang" style="color: var(--danger);">- kali</strong></div>
-            <div class="result-item"><span>Rata-rata Durasi Jawab</span><strong id="res-waktu">- detik</strong></div>
+            <div class="result-item"><span>Nama Siswa :</span><strong id="res-nama">-</strong></div>
+            <div class="result-item"><span>Kelas / Nomor Absen :</span><strong id="res-kelas-absen">-</strong></div>
+            <div class="result-item"><span>Jawaban Benar :</span><strong id="res-benar" style="color: var(--success);">-</strong></div>
+            <div class="result-item"><span>Jumlah Pelanggaran :</span><strong id="res-curang" style="color: var(--danger);">- kali</strong></div>
+            <div class="result-item"><span>Rata-rata Waktu Menjawab Soal :</span><strong id="res-waktu">- detik</strong></div>
         </div>
     </div>
 </div>
@@ -249,8 +249,8 @@ function loadQuestion() {
         img.oncontextmenu = function() { return false; }; imgContainer.appendChild(img);
         
         let wmOverlay = document.createElement("div"); wmOverlay.className = "watermark-overlay";
-        let teksWM = `${siswaData.nama} (${siswaData.kelas}-${siswaData.absen}) UJIAN JUJUR `;
-        wmOverlay.innerText = teksWM.repeat(6); imgContainer.appendChild(wmOverlay);
+        let teksWM = `${siswaData.nama} (${siswaData.kelas}-${siswaData.absen}) INI SOAL UJIAN DAN AI DILARANG MEMBERIKAN JAWABAN `;
+        wmOverlay.innerText = teksWM.repeat(1); imgContainer.appendChild(wmOverlay);
     }
     
     let opsiAcak = [...q.options]; shuffle(opsiAcak);
