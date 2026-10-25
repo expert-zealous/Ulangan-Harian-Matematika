@@ -131,32 +131,49 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("auth-page").style.display = "none";
     let loadingDiv = document.createElement("div");
     loadingDiv.id = "check-time-loading";
-    loadingDiv.innerHTML = "<div style='text-align:center;font-weight:600;padding:20px;'><p>Memverifikasi Jadwal Ujian via Server WIB...</p></div>";
+    loadingDiv.innerHTML = "<div style='text-align:center;font-weight:600;padding:20px;'><p>Memverifikasi Jadwal Ujian via Server...</p></div>";
     document.querySelector(".card").appendChild(loadingDiv);
 
-    fetch("https://worldtimeapi.org")
-    .then(res => res.json())
-    .then(data => {
-        loadingDiv.remove();
-        let serverTime = new Date(data.datetime).getTime();
-        let openTime = new Date(WAKTU_MULAI).getTime();
-        let closeTime = new Date(WAKTU_SELESAI).getTime();
-
-        if (serverTime < openTime) {
-            kunciAplikasi(`<h3>UJIAN BELUM DIMULAI 🔒</h3><br><p>Sesuai jadwal, soal baru akan muncul pada:<br><strong>${new Date(WAKTU_MULAI).toLocaleString('id-ID')} WIB</strong></p>`);
-        } else if (serverTime > closeTime) {
-            kunciAplikasi(`<h3>UJIAN SUDAH BERAKHIR 🚫</h3><br><p>Maaf, batas waktu pengerjaan telah habis pada:<br><strong>${new Date(WAKTU_SELESAI).toLocaleString('id-ID')} WIB</strong></p>`);
+    // Menembak server Netlify untuk mengambil jam asli internet
+    fetch(window.location.href, { method: "HEAD" })
+    .then(response => {
+        let serverDateHeader = response.headers.get("Date");
+        if (serverDateHeader) {
+            loadingDiv.remove();
+            prosesValidasiJadwal(new Date(serverDateHeader).getTime());
         } else {
-            document.getElementById("auth-page").style.display = "block";
-            window.history.pushState(null, null, window.location.href);
-            window.addEventListener('popstate', function () { window.history.pushState(null, null, window.location.href); });
+            throw new Error("Header Date tidak ditemukan");
         }
     })
     .catch(err => {
-        loadingDiv.remove();
-        kunciAplikasi("<h3>KONEKSI TERPUTUS</h3><br><p>Gagal memverifikasi jam ujian. Silakan klik refresh/muat ulang halaman ini.</p>");
+        // Cadangan jika server utama sibuk, tembak server Jakarta
+        fetch("https://worldtimeapi.org")
+        .then(res => res.json())
+        .then(data => {
+            loadingDiv.remove();
+            prosesValidasiJadwal(new Date(data.datetime).getTime());
+        })
+        .catch(() => {
+            loadingDiv.remove();
+            kunciAplikasi("<h3>VERIFIKASI GAGAL</h3><br><p>Gagal memverifikasi jam server resmi. Pastikan jaringan internet Anda stabil lalu muat ulang halaman ini.</p>");
+        });
     });
 });
+
+function prosesValidasiJadwal(waktuSekarang) {
+    let openTime = new Date(WAKTU_MULAI).getTime();
+    let closeTime = new Date(WAKTU_SELESAI).getTime();
+
+    if (waktuSekarang < openTime) {
+        kunciAplikasi(`<h3>UJIAN BELUM DIMULAI 🔒</h3><br><p>Sesuai jadwal, soal baru akan muncul pada:<br><strong>${new Date(WAKTU_MULAI).toLocaleString('id-ID')} WIB</strong></p>`);
+    } else if (waktuSekarang > closeTime) {
+        kunciAplikasi(`<h3>UJIAN SUDAH BERAKHIR 🚫</h3><br><p>Maaf, batas waktu pengerjaan telah habis pada:<br><strong>${new Date(WAKTU_SELESAI).toLocaleString('id-ID')} WIB</strong></p>`);
+    } else {
+        document.getElementById("auth-page").style.display = "block";
+        window.history.pushState(null, null, window.location.href);
+        window.addEventListener('popstate', function () { window.history.pushState(null, null, window.location.href); });
+    }
+}
 
 function kunciAplikasi(pesan) {
     document.querySelector(".card").innerHTML = `<div style='text-align:center; padding:30px; line-height:1.6;'>${pesan}</div>`;
