@@ -124,16 +124,14 @@ const WAKTU_MULAI   = "2026-10-25T10:00:00+07:00";
 const WAKTU_SELESAI = "2026-10-25T18:00:00+07:00"; 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqr-z022Zu2JDZo32EXw1BtkNG81O6U-T-7NXs-3Ft9KRzY61sYt4EOke7kGJ_G2CCQ/exec";
 
-const WAKTU_TERLALU_CEPAT = 20; 
-const WAKTU_MAKS_BONUS    = 180; 
-
 // =========================================================================
 // SISTEM OPERASI UTAMA (PART 1)
 // =========================================================================
 let siswaData = { nama: "", absen: "", kelas: "" };
 let currentQuestionIndex = 0; let skorBenar = 0; let jumlahCurang = 0; let jumlahTerlaluCepat = 0;
 let totalWaktuUjian = 0; let waktuSoalIni = 0; let timerInterval; let totalBenarMurni = 0;
-let ujianBerjalan = false;
+let ujianBerjalan = false; let autoSubmitTerpilih = false;
+let sisaWaktuDetikGlobal = 999999;
 
 window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("auth-page").style.display = "none";
@@ -142,19 +140,15 @@ window.addEventListener("DOMContentLoaded", () => {
     loadingDiv.innerHTML = "<div style='text-align:center;font-weight:600;padding:20px;'><p>Memverifikasi Jadwal Ujian via Server...</p></div>";
     document.querySelector(".card").appendChild(loadingDiv);
 
-    // Menembak server Netlify untuk mengambil jam asli internet
     fetch(window.location.href, { method: "HEAD" })
     .then(response => {
         let serverDateHeader = response.headers.get("Date");
         if (serverDateHeader) {
             loadingDiv.remove();
             prosesValidasiJadwal(new Date(serverDateHeader).getTime());
-        } else {
-            throw new Error("Header Date tidak ditemukan");
-        }
+        } else { throw new Error("Header kosong"); }
     })
-    .catch(err => {
-        // Cadangan jika server utama sibuk, tembak server Jakarta
+    .catch(() => {
         fetch("https://worldtimeapi.org")
         .then(res => res.json())
         .then(data => {
@@ -163,7 +157,7 @@ window.addEventListener("DOMContentLoaded", () => {
         })
         .catch(() => {
             loadingDiv.remove();
-            kunciAplikasi("<h3>VERIFIKASI GAGAL</h3><br><p>Gagal memverifikasi jam server resmi. Pastikan jaringan internet Anda stabil lalu muat ulang halaman ini.</p>");
+            kunciAplikasi("<h3>VERIFIKASI GAGAL</h3><br><p>Gagal memverifikasi jam server resmi. Periksa jaringan Anda.</p>");
         });
     });
 });
@@ -177,6 +171,8 @@ function prosesValidasiJadwal(waktuSekarang) {
     } else if (waktuSekarang > closeTime) {
         kunciAplikasi(`<h3>UJIAN SUDAH BERAKHIR 🚫</h3><br><p>Maaf, batas waktu pengerjaan telah habis pada:<br><strong>${new Date(WAKTU_SELESAI).toLocaleString('id-ID')} WIB</strong></p>`);
     } else {
+        // Hitung sisa waktu mundur secara presisi dari selisih jam server
+        sisaWaktuDetikGlobal = Math.floor((closeTime - waktuSekarang) / 1000);
         document.getElementById("auth-page").style.display = "block";
         window.history.pushState(null, null, window.location.href);
         window.addEventListener('popstate', function () { window.history.pushState(null, null, window.location.href); });
@@ -207,43 +203,30 @@ function masukFullscreen() {
 function startExam() {
     ujianBerjalan = true;
     masukFullscreen();
-     // 🛠️ TAMBAHKAN BARIS INI untuk memaksa halaman login hilang total saat soal dimulai
     document.getElementById("auth-page").style.display = "none";
     document.getElementById("auth-page").classList.add("hidden");
     document.getElementById("exam-page").classList.remove("hidden");
     shuffle(daftarSoal); loadQuestion(); startTimer();
     
+    // 🔥 AUTO SUBMIT JIKA SISWA KABUR/KELUAR LAYAR (WhatsApp/Google/Home)
     document.addEventListener("visibilitychange", () => {
-        if (document.hidden && ujianBerjalan) { catatKecurangan("Anda terdeteksi keluar dari layar ujian!"); }
-    });
-
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement && ujianBerjalan) { catatKecurangan("Anda memaksa keluar dari mode Full Screen!"); setTimeout(masukFullscreen, 1000); }
-    });
-    document.addEventListener('webkitfullscreenchange', () => {
-        if (!document.webkitFullscreenElement && ujianBerjalan) { catatKecurangan("Anda memaksa keluar dari mode Full Screen!"); setTimeout(masukFullscreen, 1000); }
-    });
-
-    document.addEventListener('keydown', (e) => {
-        if (ujianBerjalan) {
-            let key = e.key || e.keyCode;
-            let isWinScreenshot = e.metaKey && e.shiftKey && (key === 'S' || key === 's' || key === 83);
-            let isMacScreenshot = e.metaKey && e.shiftKey && (key === '4' || key === 52);
-            let isPrintScreen = key === 'PrintScreen' || key === 44;
-            
-            if (isPrintScreen || isWinScreenshot || isMacScreenshot) {
-                e.preventDefault();
-                catatKecurangan("DILARANG screenshot! Aksi ini dicatat sebagai pelanggaran berat.");
-            }
+        if (document.hidden && ujianBerjalan && !autoSubmitTerpilih) {
+            autoSubmitTerpilih = true;
+            jumlahCurang += 2; // Hukuman tambahan karena kabur di tengah jalan
+            alert("🚨 PELANGGARAN BERAT: Anda keluar dari aplikasi ujian! Jawaban dikunci dan dikirim otomatis.");
+            processAndSendData();
         }
     });
-}
 
-function catatKecurangan(pesanPeringatan) {
-    jumlahCurang++;
-    document.getElementById("warning-badge").classList.remove("hidden");
-    document.getElementById("count-curang").innerText = (jumlahCurang + jumlahTerlaluCepat);
-    alert(`⚠️ DETEKSI PELANGGARAN: ${pesanPeringatan}\nNilai Anda dipotong otomatis sebesar 25 poin.`);
+    // Deteksi jika memaksa keluar fullscreen
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && ujianBerjalan && !autoSubmitTerpilih) {
+            autoSubmitTerpilih = true;
+            jumlahCurang += 1;
+            alert("🚨 PELANGGARAN: Anda keluar dari mode layar penuh! Jawaban dikirim otomatis.");
+            processAndSendData();
+        }
+    });
 }
 
 function shuffle(array) {
@@ -280,46 +263,58 @@ function loadQuestion() {
 }
 
 function startTimer() {
-    timerInterval = setInterval(() => { waktuSoalIni++; totalWaktuUjian++; document.getElementById("timer").innerText = `${waktuSoalIni}s`; }, 1000);
+    timerInterval = setInterval(() => {
+        waktuSoalIni++;
+        totalWaktuUjian++;
+        sisaWaktuDetikGlobal--;
+
+        // Hitung menit dan detik untuk tampilan jam dinding ujian
+        let m = Math.floor(sisaWaktuDetikGlobal / 60);
+        let s = sisaWaktuDetikGlobal % 60;
+        document.getElementById("timer").innerText = `${m}m ${s}s`;
+
+        // 🔥 AUTO SUBMIT JIKA WAKTU UTAMA UJIAN SELESAI (Jam 12:00 Tiba)
+        if (sisaWaktuDetikGlobal <= 0 && ujianBerjalan && !autoSubmitTerpilih) {
+            autoSubmitTerpilih = true;
+            alert("⏰ WAKTU HABIS: Batas jam ujian telah selesai! Mengirim jawaban otomatis...");
+            processAndSendData();
+        }
+    }, 1000);
 }
 
 function checkAnswer(selectedOption) {
-    // Cari semua tombol opsi yang ada di layar saat itu
     let semuaTombol = document.querySelectorAll(".option-btn");
-    
     semuaTombol.forEach(btn => {
-        // Berikan warna biru pada tombol pilihan yang diklik siswa
-        if (btn.innerText === selectedOption) {
-            btn.classList.add("selected-glow");
-        }
-        // Kunci semua tombol agar tidak bisa diklik dua kali saat jeda warna
+        if (btn.innerText === selectedOption) { btn.classList.add("selected-glow"); }
         btn.disabled = true;
     });
 
     let q = daftarSoal[currentQuestionIndex];
+    // Membaca batas waktu khusus per nomor soal dari file soal.js (Default: 60 detik)
+    let batasWaktuSoalIni = q.minTime ? q.minTime : 60;
+
     if (selectedOption === q.answer) {
         totalBenarMurni++;
-        if (waktuSoalIni < WAKTU_TERLALU_CEPAT) {
+        
+        // 🛡️ PENILAIAN BERDASARKAN BATAS WAKTU INDIVIDUAL SOAL
+        if (waktuSoalIni < batasWaktuSoalIni) {
             jumlahTerlaluCepat++; skorBenar += 10;
-        } else if (waktuSoalIni >= WAKTU_TERLALU_CEPAT && waktuSoalIni <= WAKTU_MAKS_BONUS) {
-            let bonusWaktu = (WAKTU_MAKS_BONUS - waktuSoalIni) * 0.03; skorBenar += (10 + bonusWaktu);
+        } else if (waktuSoalIni >= batasWaktuSoalIni && waktuSoalIni <= (batasWaktuSoalIni * 2)) {
+            let bonusWaktu = ((batasWaktuSoalIni * 2) - waktuSoalIni) * 0.03; skorBenar += (10 + bonusWaktu);
         } else {
             skorBenar += 10;
         }
     }
 
     currentQuestionIndex++;
-    
-    // Berikan jeda 500 milidetik (0.5 detik) agar warna biru terlihat jelas sebelum pindah soal
     setTimeout(() => {
-        if (currentQuestionIndex < daftarSoal.length) { 
+        if (currentQuestionIndex < daftarSoal.length && !autoSubmitTerpilih) { 
             loadQuestion(); 
-        } else { 
+        } else if (!autoSubmitTerpilih) { 
             processAndSendData(); 
         }
     }, 500);
 }
-
 
 function processAndSendData() {
     ujianBerjalan = false; clearInterval(timerInterval);
@@ -339,29 +334,20 @@ function processAndSendData() {
     let formBody = new URLSearchParams(payload).toString();
     fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: formBody })
     .then(() => { showResultPage(payload); })
-    .catch((err) => { console.error("Gagal kirim:", err); showResultPage(payload); });
+    .catch(() => { showResultPage(payload); });
 }
 
 function showResultPage(data) {
     document.getElementById("loading-page").classList.add("hidden");
     document.getElementById("result-page").classList.remove("hidden");
-    
-    document.getElementById("res-nilai").innerText = data.nilai;
-    document.getElementById("res-nama").innerText = data.nama;
-    
-    let infoKelasAbsen = `${data.kelas} / Absen ${data.absen}`;
-    document.getElementById("res-kelas-absen").innerText = infoKelasAbsen;
-    
-    let infoBenar = `${data.benar} dari ${daftarSoal.length} soal`;
-    document.getElementById("res-benar").innerText = infoBenar;
-    
-    document.getElementById("res-curang").innerText = data.curang;
-    
-    let infoWaktu = `${data.waktu} detik`;
-    document.getElementById("res-waktu").innerText = infoWaktu;
-    
+    document.getElementById("res-nilai").innerText = data.nilai; document.getElementById("res-nama").innerText = data.nama;
+    document.getElementById("res-kelas-absen").innerText = `${data.kelas} / Absen ${data.absen}`;
+    document.getElementById("res-benar").innerText = `${data.benar} dari ${daftarSoal.length} soal`;
+    document.getElementById("res-curang").innerText = data.curang; document.getElementById("res-waktu").innerText = `${data.waktu} detik`;
     if (document.exitFullscreen) { document.exitFullscreen(); }
 }
 </script>
 </body>
 </html>
+
+
