@@ -199,6 +199,8 @@ function masukFullscreen() {
 function startExam() {
     ujianBerjalan = true;
     masukFullscreen();
+     // 🛠️ TAMBAHKAN BARIS INI untuk memaksa halaman login hilang total saat soal dimulai
+    document.getElementById("auth-page").style.display = "none";
     document.getElementById("auth-page").classList.add("hidden");
     document.getElementById("exam-page").classList.remove("hidden");
     shuffle(daftarSoal); loadQuestion(); startTimer();
