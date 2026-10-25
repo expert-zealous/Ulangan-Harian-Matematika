@@ -46,6 +46,22 @@
             body { display: none !important; }
             .card, #soal-container { display: none !important; visibility: hidden !important; }
         }
+                /* 🛠️ Efek warna biru transisi saat sebuah pilihan jawaban diklik siswa */
+        .option-btn.selected-glow {
+            background-color: #e0e7ff !important;
+            border-color: #4f46e5 !important;
+            color: #4f46e5 !important;
+            font-weight: 600;
+        }
+
+        /* ❌ Memaksa hilangnya tulisan 'Powered by Netlify' di browser HP siswa */
+        .netlify-badge, #netlify-badge, [class*="netlify"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
     </style>
 </head>
 <body>
@@ -276,6 +292,18 @@ function startTimer() {
 }
 
 function checkAnswer(selectedOption) {
+    // Cari semua tombol opsi yang ada di layar saat itu
+    let semuaTombol = document.querySelectorAll(".option-btn");
+    
+    semuaTombol.forEach(btn => {
+        // Berikan warna biru pada tombol pilihan yang diklik siswa
+        if (btn.innerText === selectedOption) {
+            btn.classList.add("selected-glow");
+        }
+        // Kunci semua tombol agar tidak bisa diklik dua kali saat jeda warna
+        btn.disabled = true;
+    });
+
     let q = daftarSoal[currentQuestionIndex];
     if (selectedOption === q.answer) {
         totalBenarMurni++;
@@ -287,9 +315,19 @@ function checkAnswer(selectedOption) {
             skorBenar += 10;
         }
     }
+
     currentQuestionIndex++;
-    if (currentQuestionIndex < daftarSoal.length) { loadQuestion(); } else { processAndSendData(); }
+    
+    // Berikan jeda 500 milidetik (0.5 detik) agar warna biru terlihat jelas sebelum pindah soal
+    setTimeout(() => {
+        if (currentQuestionIndex < daftarSoal.length) { 
+            loadQuestion(); 
+        } else { 
+            processAndSendData(); 
+        }
+    }, 500);
 }
+
 
 function processAndSendData() {
     ujianBerjalan = false; clearInterval(timerInterval);
