@@ -81,10 +81,10 @@
                 <li>Setiap aksi screenshot / pindah layar akan memotong nilai sebesar 25 poin!</li>
                 <li>Meminta bantuan jawaban AI merupakan pelanggaran!</li>
                 <li>Soal tidak bisa dikerjakan kembali setelah klik jawaban!</li>
-                <li>Jawaban terkirim jika waktu ujian selesai!</li>
+                <li>Jawaban langsung terkirim jika waktu ujian selesai!</li>
                 <li>Penilaian ujian dari jawaban benar dan kejujuran tanpa pelanggaran!</li>
                 <li>Setiap pelanggaran akan mengurangi nilai ujian!</li>
-                <li>Jawaban pertama terkirim yang menjadi hasil ujian</li>
+                <li>Jawaban terkirim pertama kali yang akan menjadi hasil ujian</li>
                 <li>Tidak ada toleransi pelanggaran karena ketidaksengajaan peserta saat ujian!</li>
             </ul>
         </div>
@@ -127,8 +127,8 @@
 // =========================================================================
 // ⏳ PENGATURAN UTAMA JADWAL & AMBANG BATAS CHEATING
 // =========================================================================
-const WAKTU_MULAI   = "2026-10-29T06:30:00+07:00"; 
-const WAKTU_SELESAI = "2026-10-29T07:30:00+07:00"; 
+const WAKTU_MULAI   = "2026-10-29T19:00:00+07:00"; 
+const WAKTU_SELESAI = "2026-10-29T20:00:00+07:00"; 
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNqr-z022Zu2JDZo32EXw1BtkNG81O6U-T-7NXs-3Ft9KRzY61sYt4EOke7kGJ_G2CCQ/exec";
 
 // =========================================================================
@@ -174,7 +174,7 @@ function prosesValidasiJadwal(waktuSekarang) {
     let closeTime = new Date(WAKTU_SELESAI).getTime();
 
     if (waktuSekarang < openTime) {
-        kunciAplikasi(`<h3>UJIAN BELUM DIMULAI 🔒</h3><br><p>Sesuai jadwal, soal baru akan muncul pada:<br><strong>${new Date(WAKTU_MULAI).toLocaleString('id-ID')} WIB</strong></p>`);
+        kunciAplikasi(`<h3>UJIAN BELUM DIMULAI 🔒</h3><br><p>Sesuai jadwal, soal akan muncul pada:<br><strong>${new Date(WAKTU_MULAI).toLocaleString('id-ID')} WIB</strong></p>`);
     } else if (waktuSekarang > closeTime) {
         kunciAplikasi(`<h3>UJIAN SUDAH BERAKHIR 🚫</h3><br><p>Maaf, batas waktu pengerjaan telah habis pada:<br><strong>${new Date(WAKTU_SELESAI).toLocaleString('id-ID')} WIB</strong></p>`);
     } else {
