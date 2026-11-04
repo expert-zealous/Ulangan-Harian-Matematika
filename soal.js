@@ -1,4 +1,4 @@
-// Paket A - Persamaan dan Pertidaksamaan Satu Variabel
+// Paket A Persamaan dan Pertidaksamaan Satu Variabel
 const daftarSoal = [
     {
         text: "Nilai x yang memenuhi persamaan 3(x - 2) = x + 8 adalah...",
