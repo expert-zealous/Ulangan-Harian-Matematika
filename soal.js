@@ -1,93 +1,93 @@
-// Paket A Persamaan dan Pertidaksamaan Satu Variabel
+// Paket B - Persamaan dan Pertidaksamaan Satu Variabel
 const daftarSoal = [
     {
-        text: "Nilai x yang memenuhi persamaan 3(x - 2) = x + 8 adalah...",
+        text: "Nilai y yang memenuhi persamaan 4(y - 3) = y + 9 adalah...",
         image: "",
-        options: ["5", "7", "9", "11"],
+        options: ["5", "6", "7", "8"],
         answer: "7",
         minTime: 60
     },
     {
-        text: "Himpunan penyelesaian dari pertidaksamaan 2x - 5 < 4x + 3 untuk x bilangan bulat jika digambarkan pada garis bilangan adalah...",
+        text: "Himpunan penyelesaian dari pertidaksamaan 3x - 2 < 6x + 10 untuk x bilangan bulat jika digambarkan pada garis bilangan adalah...",
         image: "",
         options: [
-            "Garis bilangan dengan bulatan kosong di -4 dan panah ke arah kanan",
             "Garis bilangan dengan bulatan kosong di -4 dan panah ke arah kiri",
-            "Garis bilangan dengan bulatan hitam di 4 dan panah ke arah kanan",
-            "Garis bilangan dengan bulatan kosong di 4 dan panah ke arah kiri"
+            "Garis bilangan dengan bulatan kosong di -4 dan panah ke arah kanan",
+            "Garis bilangan dengan bulatan hitam di 4 dan panah ke arah kiri",
+            "Garis bilangan dengan bulatan kosong di 4 dan panah ke arah kanan"
         ],
         answer: "Garis bilangan dengan bulatan kosong di -4 dan panah ke arah kanan",
         minTime: 75
     },
     {
-        text: "Jika (1/2)x + 4 = (2/3)x - 1, maka nilai dari x + 5 adalah...",
+        text: "Jika (1/3)x + 5 = (3/4)x - 5, maka nilai dari x + 2 adalah...",
         image: "",
-        options: ["30", "35", "40", "45"],
-        answer: "35",
+        options: ["24", "26", "28", "30"],
+        answer: "26",
         minTime: 90
     },
     {
-        text: "Tabungan milik Rian di bank adalah Rp150.000,00 lebih banyak dari tabungan Susi. Jika jumlah tabungan mereka berdua adalah Rp750.000,00, model matematika yang tepat untuk menghitung besar tabungan Susi (s) adalah...",
+        text: "Uang saku harian milik Budi adalah Rp20.000,00 lebih sedikit dari uang saku Candra. Jika jumlah uang saku mereka berdua adalah Rp90.000,00, model matematika yang tepat untuk menghitung besar uang saku Candra (c) adalah...",
         image: "",
         options: [
-            "2s - 150.000 = 750.000",
-            "2s + 150.000 = 750.000",
-            "s + 150.000 = 750.000",
-            "2s + 750.000 = 150.000"
+            "2c - 20.000 = 90.000",
+            "2c + 20.000 = 90.000",
+            "c - 20.000 = 90.000",
+            "2c + 90.000 = 20.000"
         ],
-        answer: "2s + 150.000 = 750.000",
+        answer: "2c - 20.000 = 90.000",
         minTime: 120
     },
     {
-        text: "Umur seorang ayah sekarang adalah 3 kali umur anaknya. Selisih umur mereka adalah 26 tahun. Umur anak tersebut 5 tahun yang akan datang adalah...",
+        text: "Umur seorang ibu sekarang adalah 4 kali umur anaknya. Selisih umur mereka adalah 27 tahun. Umur anak tersebut 3 tahun yang akan datang adalah...",
         image: "",
-        options: ["13 tahun", "18 tahun", "34 tahun", "39 tahun"],
-        answer: "18 tahun",
+        options: ["9 tahun", "12 tahun", "36 tahun", "39 tahun"],
+        answer: "12 tahun",
         minTime: 135
     },
     {
-        text: "Andi ingin membeli beberapa buah buku tulis. Harga satu buku tulis adalah Rp4.500,00. Ia membayar dengan selembar uang Rp50.000,00 and menerima kembalian tidak kurang dari Rp5.000,00. Jika banyak buku yang dibeli adalah b, model pertidaksamaan yang benar adalah...",
+        text: "Citra ingin membeli beberapa buah es krim kotak. Harga satu kotak es krim adalah Rp6.000,00. Ia membayar dengan selembar uang Rp100.000,00 dan menerima kembalian tidak kurang dari Rp16.000,00. Jika banyak es krim yang dibeli adalah x, model pertidaksamaan yang benar adalah...",
         image: "",
         options: [
-            "4.500b + 5.000 ≤ 50.000",
-            "4.500b + 5.000 ≥ 50.000",
-            "50.000 - 4.500b ≥ 5.000",
-            "50.000 - 4.500b ≤ 5.000"
+            "100.000 - 6.000x ≥ 16.000",
+            "100.000 - 6.000x ≤ 16.000",
+            "6.000x + 16.000 ≤ 100.000",
+            "6.000x + 16.000 ≥ 100.000"
         ],
-        answer: "50.000 - 4.500b ≥ 5.000",
+        answer: "100.000 - 6.000x ≥ 16.000",
         minTime: 120
     },
     {
-        text: "Seorang siswa dinyatakan lulus jika rata-rata dari tiga kali ujian matematika minimal 70. Nilai ujian pertama dan kedua Desi berturut-turut adalah 64 dan 72. Nilai minimum yang harus diperoleh Desi pada ujian ketiga agar dinyatakan lulus adalah...",
+        text: "Untuk mendapatkan predikat A, rata-rata nilai dari tiga tugas harus minimal 85. Nilai tugas pertama dan kedua Fandi adalah 82 dan 80. Nilai minimum yang harus diperoleh Fandi pada tugas ketiga agar mendapat predikat A adalah...",
         image: "",
-        options: ["72", "74", "76", "78"],
-        answer: "74",
+        options: ["90", "91", "93", "95"],
+        answer: "93",
         minTime: 150
     },
     {
-        text: "Sebuah kebun berbentuk persegi panjang memiliki ukuran panjang (2x + 5) meter dan lebar (x + 2) meter. Jika keliling kebun tersebut tidak lebih dari 56 meter, maka panjang maksimum kebun yang mungkin adalah...",
+        text: "Sebuah papan berbentuk persegi panjang memiliki ukuran panjang (3x + 2) cm dan lebar (x + 4) cm. Jika keliling papan tersebut tidak lebih dari 76 cm, maka panjang maksimum papan yang mungkin adalah...",
         image: "",
-        options: ["7 meter", "9 meter", "19 meter", "21 meter"],
-        answer: "21 meter",
-        minTime: 90
-    },
-    {
-        text: "Jumlah dari tiga bilangan bulat ganjil berurutan kurang dari atau sama dengan 45. Jika bilangan ganjil pertama dimisalkan sebagai n, grafik penyelesaian nilai n terkecil yang membatasi batas atas kelompok bilangan tersebut pada garis bilangan adalah...",
-        image: "",
-        options: [
-            "Bulatan hitam di angka 13 dengan panah ke kiri",
-            "Bulatan kosong di angka 13 dengan panah ke kanan",
-            "Bulatan hitam di angka 11 dengan panah ke kiri",
-            "Bulatan kosong di angka 11 dengan panah ke kanan"
-        ],
-        answer: "Bulatan hitam di angka 11 dengan panah ke kiri",
+        options: ["8 cm", "12 cm", "23 cm", "26 cm"],
+        answer: "26 cm",
         minTime: 180
     },
     {
-        text: "Perusahaan taksi 'Aman' memberlakukan tarif awal Rp10.000,00 dan tarif per kilometer sebesar Rp4.000,00. Seseorang memiliki uang Rp66.000,00 untuk membayar taksi tersebut. Jarak maksimum (k) dalam kilometer yang dapat ditempuh orang tersebut tanpa kekurangan uang adalah...",
+        text: "Jumlah dari tiga bilangan bulat genap berurutan kurang dari atau sama dengan 54. Jika bilangan genap pertama dimisalkan sebagai m, grafik penyelesaian nilai m terkecil yang membatasi batas atas kelompok bilangan tersebut pada garis bilangan adalah...",
         image: "",
-        options: ["13 km", "14 km", "15 km", "16 km"],
-        answer: "14 km",
+        options: [
+            "Bulatan kosong di angka 16 dengan panah ke kiri",
+            "Bulatan hitam di angka 16 dengan panah ke kiri",
+            "Bulatan kosong di angka 18 dengan panah ke kanan",
+            "Bulatan hitam di angka 18 dengan panah ke kiri"
+        ],
+        answer: "Bulatan hitam di angka 16 dengan panah ke kiri",
+        minTime: 210
+    },
+    {
+        text: "Layanan pengiriman barang 'Kilat' menetapkan biaya beban dasar Rp15.000,00 ditambah biaya per kg sebesar Rp5.000,00. Siska memiliki anggaran maksimal Rp80.000,00 untuk mengirim paket. Berat maksimum paket (p) dalam kg yang dapat dikirim Siska adalah...",
+        image: "",
+        options: ["11 kg", "12 kg", "13 kg", "14 kg"],
+        answer: "13 kg",
         minTime: 195
     }
 ];
